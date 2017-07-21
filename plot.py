@@ -7,6 +7,7 @@ import cPickle as pickle
 import csv
 import datetime
 import argparse
+import pandas
 
 
 def plot(trip, data_date, route):
@@ -18,14 +19,17 @@ def plot(trip, data_date, route):
 
     u = 'u_'+trip[0]
     f = open(os.path.join(data_path,u), "r")
-    data = np.array([row.rstrip().split("|") for row in f])  #-1943160471|16:57:03,966,490|121.526|25.088|1483520223
+    data = [[row[0], int(row[4]), float(row[2]), float(row[3])] for row in csv.reader(f, delimiter='|')] #[imsi, unix_time, lon, lat]
+    data_df = pandas.DataFrame(data, columns=['imsi', 'time', 'lon', 'lat'])
+    data_df = data_df.sort_values(['time'])
+    data = data_df.values.tolist()
+    #data = np.array([row.rstrip().split("|") for row in f])  #-1943160471|16:57:03,966,490|121.526|25.088|1483520223
     f.close()
 
-
+    '''
     year = int(data_date[0:4])
     month = int(data_date[5])
     date = int(data_date[7])
-
 
     ### sort user data by datetime ###
     for n,row in enumerate(data,0):
@@ -35,7 +39,7 @@ def plot(trip, data_date, route):
 
     data = sorted(data,key=lambda x:x[4])
     data = [[row[0],int(row[4]),float(row[2]),float(row[3])] for row in data] #imsi,unixtime,lon,lat
-
+    '''
 
     start = int(trip[1])
     end = int(trip[2])
