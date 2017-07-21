@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import mplleaflet
-import os
+import os, errno
 import time
 import numpy as np
 import cPickle as pickle
-import errno
 import csv
-import pandas
 import datetime
+import argparse
+
 
 def plot(trip, data_date, route):
     # trip: [-1003216209,1483537823,1483539806,NWT16595,1,11,42]
@@ -67,10 +67,12 @@ def plot(trip, data_date, route):
     print
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("date", type=str, help='(yyyymmdd)')
+    args = parser.parse_args()
 
-    data_date = '20170104'
+    data_date = args.date
     route = pickle.load(open("bus_route.pickle", "rb"))
-    with open("output/bus_20170104.csv", "r") as f:
+    with open("output/bus_"+data_date+".csv", "r") as f:
         for row in f:
             plot(row.rstrip().split(','), data_date, route)
-

@@ -2,7 +2,7 @@
 from CHT import Preprocess
 from CHT import Mode_Detection
 from CHT import External
-import os
+import os, errno
 import csv
 import time
 import pandas
@@ -12,6 +12,13 @@ import argparse
 def csv_output(result, file_name_list=['od.csv', 'stop.csv']):
 	file_list = list()
 	writer_list = list()
+
+	try:
+		os.makedirs('output/')
+	except OSError as e:
+		if e.errno != errno.EEXIST:
+			raise
+
 	for name in file_name_list:
 		temp = open('output/'+name, 'w')
 		temp_writer = csv.writer(temp, delimiter=',')
