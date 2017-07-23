@@ -94,7 +94,11 @@ def bus_main(date):
 def HSR_main(date):
     user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
     result = []
-    travel_time, travel_during_time = External.HSR_travel_time(date)
+    try:
+        request_date = date[:4] + '-' + date[4:6] + '-' + date[6:]
+    except:
+        print('date format error')
+    travel_time, travel_during_time = External.HSR_travel_time(request_date)
     stations = External.HSR_station()
     cell_file = "./data/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
     HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations)
