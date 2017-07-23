@@ -19,7 +19,6 @@ def d(p1, p2):
     delta_sigma = 2 * math.asin(math.sqrt( math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + math.cos(phi_s) * math.cos(phi_f) * math.sin(delta_lampda / 2) * math.sin(delta_lampda / 2)))
     return delta_sigma * 6378137 # unit (meter)
 
-
 def find_min_dis(point,location):
     min_1 = 10000000
     min_2 = 10000000
@@ -32,16 +31,20 @@ def find_min_dis(point,location):
     for l in location:
         lat_b = l[0]
         lon_b = l[1]
-
-
         p1 = [lon_a,lat_a]
         p2 = [lon_b,lat_b]
         dis = d(p1,p2)
         if dis < min_1:
+            min_3 = min_2
+            min_station_3 = min_station_2
+            min_2 = min_1
+            min_station_2 = min_station_1
             min_1 = dis
             min_station_1 = l
         else:
             if dis < min_2:
+                min_3 = min_2
+                min_station_3 = min_station_2
                 min_2 = dis
                 min_station_2 = l
             else:
@@ -50,13 +53,16 @@ def find_min_dis(point,location):
                     min_station_3 = l
     return [min_station_1,min_station_2,min_station_3]
 
+
 def get_cover_tower(cell_tower,entrance,cover_range):
+
     #entrance = [lon,lat]
     ref_tower = []
     for tower in cell_tower: #tower = [lon,lat]
         if d(entrance,(tower[1],tower[0])) <= cover_range:
             ref_tower.append([tower[1],tower[0]])
     return ref_tower
+
 
 def collect_cell_tower(all_user_data,output_file):
     # [imsi,start_time,end_time,lon,lat]
@@ -72,33 +78,35 @@ def collect_cell_tower(all_user_data,output_file):
 
     f.close()
 
-def HSR_reference_system(cell_file,stations):
-	cell_f = open("%s"%(cell_file),"r")
-	cell_data = [[float(row.rstrip().split(",")[1]),float(row.rstrip().split(",")[0])] for row in cell_f]
-	k = 3
-	HSR_ref_sys = {}
-	for s in stations.keys():
-		lon,lat = stations[s]['position']
-		min_stations = find_min_dis([lat,lon],cell_data)
-		HSR_ref_sys[s] = []
-		for i in range(1,k+1,1):
-			HSR_ref_sys[s].append([min_stations[i][1],min_stations[i][0]])
 
-	return HSR_ref_sys
+def HSR_reference_system(cell_file,stations):
+    cell_f = open("%s"%(cell_file),"r")
+    cell_data = [[float(row.rstrip().split(",")[1]),float(row.rstrip().split(",")[0])] for row in cell_f]
+    k = 3
+    HSR_ref_sys = {}
+    for s in stations.keys():
+        lon,lat = stations[s]['position']
+        min_stations = find_min_dis([lat,lon],cell_data)
+        HSR_ref_sys[s] = list()
+        for i in range(0,k):
+            HSR_ref_sys[s].append([min_stations[i][1],min_stations[i][0]])
+    print(HSR_ref_sys)
+    return HSR_ref_sys
+
 
 def rail_reference_system(cell_file,stations):
-	cell_f = open("%s"%(cell_file),"r")
-	cell_data = [[float(row.rstrip().split(",")[1]),float(row.rstrip().split(",")[0])] for row in cell_f]
-	k = 3
-	rail_ref_sys = {}
-	for s in stations.keys():
-		lon,lat = stations[s]['position']
-		min_stations = find_min_dis([lat,lon],cell_data)
-		rail_ref_sys[s] = []
-		for i in range(1,k+1,1):
-			rail_ref_sys[s].append([min_stations[i][1],min_stations[i][0]])
+    cell_f = open("%s"%(cell_file),"r")
+    cell_data = [[float(row.rstrip().split(",")[1]),float(row.rstrip().split(",")[0])] for row in cell_f]
+    k = 3
+    rail_ref_sys = {}
+    for s in stations.keys():
+        lon,lat = stations[s]['position']
+        min_stations = find_min_dis([lat,lon],cell_data)
+        rail_ref_sys[s] = []
+        for i in range(0, k):
+            rail_ref_sys[s].append([min_stations[i][1],min_stations[i][0]])
 
-	return rail_ref_sys
+    return rail_ref_sys
 
 def MRT_reference_system(parameter,cell_file,entrance_file,output_file,ref_type='KNT'):
 
