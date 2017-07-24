@@ -142,62 +142,89 @@ def find_the_closest_train_no(travel_time,start_time,end_time,time_threshold):
             return train_no
     return 'empty'
 
-def HSR_trip_detection(user_data,travel_time,stations,HSR_ref_sys,time_threshold=5,stay_time=10):
 
+def merge_train_trip(trips):
+    temp_trip = trips[0]
+    merged_trips = list()
+    for i, trip in enumerate(trips[1:], 1):
+        if (temp_trip[4] == trip[3]) and ((trip[1] - temp_trip[2]) < 1200) and ((trip[4] != temp_trip[3])):
+            temp_trip = [trip[0], temp_trip[1], trip[2], temp_trip[3], trip[4]]
+        else:
+            merged_trips.append(temp_trip)
+            temp_trip = trip
+    merged_trips.append(temp_trip)
+    return merged_trips
+
+
+def HSR_trip_detection(user_data, travel_time, travel_during_time, stations, HSR_ref_sys, time_threshold=10,
+                       stay_time=10):
     HSR_trips = []
     imsi = user_data[0][0]
-    stay_index = [i for i,data in enumerate(user_data,0) if (data[2]-data[1]) >=stay_time*60 ]
-
-    for i in range(1,len(stay_index),1):
-        seg = user_data[stay_index[i-1]:stay_index[i]+1]
+    stay_index = [i for i, data in enumerate(user_data, 0) if (int(data[2]) - int(data[1])) >= stay_time * 60]
+    for i in range(1, len(stay_index), 1):
+        seg = user_data[stay_index[i - 1]:stay_index[i] + 1]
         if len(seg) > 0:
             # spatail match
             match_station = []
             for row in seg:
                 for station in stations.keys():
                     for ref_tower in HSR_ref_sys[station]:
-                        if (ref_tower[0] == row[3]) & (ref_tower[1] == row[4]):
-                            match_station.append( [station,row] )
+                        if (ref_tower[0] == float(row[3])) & (ref_tower[1] == float(row[4])):
+                            match_station.append([station, row])
 
-            # temporal match
-            if len(match_station) > 1:  # at least two stations ( depart and arrival )
-                for trip_num in range(1,len(match_station),1):
-                    depart_station = match_station[trip_num-1][0]
+            if len(match_station) > 1:
+                for trip_num in range(1, len(match_station), 1):
+                    depart_station = match_station[trip_num - 1][0]
                     arrival_station = match_station[trip_num][0]
-                    if depart_station != arrival_station: # depart station and arrival station are difference
-                        start_time = match_station[trip_num-1][1][2]
-                        end_time = match_station[trip_num][1][1]
-                        train_no = find_the_closest_train_no(travel_time[depart_station][arrival_station],start_time,end_time,time_threshold)
-                        if train_no != 'empty':
-                            HSR_trips.append( [imsi,start_time,end_time,train_no,depart_station,arrival_station])
-
+                    if depart_station != arrival_station:
+                        start_time = int(match_station[trip_num - 1][1][2])
+                        end_time = int(match_station[trip_num][1][1])
+                        if (end_time - start_time) < (
+                            travel_during_time[depart_station][arrival_station] + time_threshold * 60):
+                            HSR_trips.append([imsi, start_time, end_time, depart_station, arrival_station])
+                            # temporal match
+                            # if len(match_station) > 1:  # at least two stations ( depart and arrival )
+                            #     for trip_num in range(1,len(match_station),1):
+                            #         depart_station = match_station[trip_num-1][0]
+                            #         arrival_station = match_station[trip_num][0]
+                            #         if depart_station != arrival_station: # depart station and arrival station are difference
+                            #             start_time = match_station[trip_num-1][1][2]
+                            #             end_time = match_station[trip_num][1][1]
+                            #             train_no = find_the_closest_train_no(travel_time[depart_station][arrival_station],start_time,end_time,time_threshold)
+                            #             if train_no != 'empty':
+                            #                 HSR_trips.append( [imsi,start_time,end_time,train_no,depart_station,arrival_station])
+    if HSR_trips:
+        HSR_trips = merge_train_trip(HSR_trips)
     return HSR_trips
 
 
-def rail_trip_detection(user_data,stations,HSR_ref_sys,stay_time=10):
-
+def rail_trip_detection(user_data, stations, rail_ref_sys, time_threshold=40, stay_time=10):
     rail_trips = []
     imsi = user_data[0][0]
-    stay_index = [i for i,data in enumerate(user_data,0) if (data[2]-data[1]) >=stay_time*60 ]
-
-    for i in range(1,len(stay_index),1):
-        seg = user_data[stay_index[i-1]:stay_index[i]+1]
+    stay_index = [i for i, data in enumerate(user_data, 0) if (int(data[2]) - int(data[1])) >= stay_time * 60]
+    for i in range(1, len(stay_index), 1):
+        seg = user_data[stay_index[i - 1]:stay_index[i] + 1]
         if len(seg) > 0:
             # spatail match
             match_station = []
             for row in seg:
                 for station in stations.keys():
-                    for ref_tower in HSR_ref_sys[station]:
-                        if (ref_tower[0] == row[3]) & (ref_tower[1] == row[4]):
-                            match_station.append( [station,row] )
-
+                    for ref_tower in rail_ref_sys[station]:
+                        if (ref_tower[0] == float(row[3])) & (ref_tower[1] == float(row[4])):
+                            match_station.append([station, row])
+                            break
             if len(match_station) > 1:  # at least two stations ( depart and arrival )
-                for trip_num in range(1,len(match_station),1):
-                    depart_station = match_station[trip_num-1][0]
+                for trip_num in range(1, len(match_station), 1):
+                    depart_station = match_station[trip_num - 1][0]
                     arrival_station = match_station[trip_num][0]
-                    if depart_station != arrival_station: # depart station and arrival station are difference
-                        start_time = match_station[trip_num-1][1][2]
-                        end_time = match_station[trip_num][1][1]
-                        rail_trips.append( [imsi,start_time,end_time,depart_station,arrival_station])
+                    if depart_station != arrival_station:  # depart station and arrival station are difference
+                        start_time = int(match_station[trip_num - 1][1][2])
+                        end_time = int(match_station[trip_num][1][1])
+                        if (end_time - start_time) < (time_threshold * 60) and (end_time - start_time) > 300:
+                            rail_trips.append([imsi, start_time, end_time, depart_station, arrival_station])
 
+    if rail_trips:
+        rail_trips = merge_train_trip(rail_trips)
+    if len(rail_trips) >= 4:
+        rail_trips = list()
     return rail_trips

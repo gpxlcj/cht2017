@@ -6,30 +6,58 @@ import os
 import pickle
 
 
+def request_date(date):
+	day_by_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+	old_date = [int(i) for i in date.split('-')]
+	now_date = datetime.datetime.now()
+	now_date = [now_date.year, now_date.month, now_date.day]
+	if now_date[0] == old_date[0]:
+		day_distance = sum(day_by_month[(old_date[1] - 1):(now_date[1] - 1)]) - old_date[2] + now_date[2]
+	else:
+		day_distance = sum(day_by_month[(old_date[1] - 1):12]) - old_date[2]
+		day_distance += sum(day_by_month[0:(now_date[1] - 1)]) + now_date[2]
+	now_date[2] = now_date[2] - day_distance % 7
+	if now_date[2] < 0:
+		now_date[2] += day_by_month[(now_date[1] - 1)]
+		now_date[1] -= 1
+	if now_date[1] == 0:
+		now_date[1] = 12
+		now_date[0] -= 1
+	connect_1 = '-'
+	connect_2 = '-'
+	if now_date[1] < 10:
+		connect_1 = '-0'
+	if now_date[2] < 10:
+		connect_2 = '-0'
+	new_date = str(now_date[0]) + connect_1 + str(now_date[1]) + connect_2 + str(now_date[2])
+	return new_date
+
 
 def rail_station():
 	# detail refer this link: http://ptx.transportdata.tw/MOTC/Swagger/#!/CityBusApi/CityBusApi_StopOfRoute
 	url = "http://ptx.transportdata.tw/MOTC/v2/Rail/TRA/Station?$format=JSON"
-	result= simplejson.load(urllib.urlopen(url))
-	#stations: stations[station_id][station_name and position]
+	result = simplejson.load(urllib.urlopen(url))
+	# result= simplejson.load(requests.get(url).text)
+	# stations: stations[station_id][station_name and position]
 	stations = {}
 	for row in result:
 		station_id = row["StationID"]
+		if station_id == '4102':
+			continue
 		station_name = row["StationName"]["En"]
 		lon = float(row["StationPosition"]["PositionLon"])
 		lat = float(row["StationPosition"]["PositionLat"])
 		stations[station_id] = {}
 		stations[station_id]['name'] = station_name
-		stations[station_id]['position'] = (lon,lat)
-
+		stations[station_id]['position'] = (lon, lat)
 	return stations
 
 
 def HSR_station():
 	# detail refer this link: http://ptx.transportdata.tw/MOTC/Swagger/#!/CityBusApi/CityBusApi_StopOfRoute
 	url = "http://ptx.transportdata.tw/MOTC/v2/Rail/THSR/Station?$format=JSON"
-	result= simplejson.load(urllib.urlopen(url))
-	#stations: stations[station_id][station_name and position]
+	result = simplejson.load(urllib.urlopen(url))
+	# stations: stations[station_id][station_name and position]
 	stations = {}
 	for row in result:
 		station_id = row["StationID"]
@@ -38,37 +66,75 @@ def HSR_station():
 		lat = float(row["StationPosition"]["PositionLat"])
 		stations[station_id] = {}
 		stations[station_id]['name'] = station_name
-		stations[station_id]['position'] = (lon,lat)
+		stations[station_id]['position'] = (lon, lat)
 
 	return stations
 
-def datetime2unixtime(time_info,date_info):
-	unix_time = int(time.mktime(time.strptime('%s %s:00'%(date_info,time_info), '%Y-%m-%d %H:%M:%S')))
+
+def datetime2unixtime(time_info, date_info):
+	unix_time = int(time.mktime(time.strptime('%s %s:00' % (date_info, time_info), '%Y-%m-%d %H:%M:%S')))
 	return unix_time
+
 
 def HSR_travel_time(date):
 	# date = YY-MM-DD
+	date = request_date(date)
 	station_url = "http://ptx.transportdata.tw/MOTC/v2/Rail/THSR/Station?$format=JSON"
 	result = simplejson.load(urllib.urlopen(station_url))
 	all_stations = set()
 	for row in result:
-		all_stations.add( row["StationID"] )
+		all_stations.add(row["StationID"])
 
 	travel_time = {}
+	travel_during_time = {}
 	for dep_station in all_stations:
 		travel_time[dep_station] = {}
+		travel_during_time[dep_station] = {}
 		for arr_station in all_stations:
 			if dep_station != arr_station:
 				travel_time[dep_station][arr_station] = []
-				timetable_url = "http://ptx.transportdata.tw/MOTC/v2/Rail/THSR/DailyTimetable/OD/%s/to/%s/%s?$format=JSON"%(dep_station,arr_station,date)
+				travel_during_time[dep_station][arr_station] = 0
+				timetable_url = "http://ptx.transportdata.tw/MOTC/v2/Rail/THSR/DailyTimetable/OD/%s/to/%s/%s?$format=JSON" % (
+				dep_station, arr_station, date)
 				result = simplejson.load(urllib.urlopen(timetable_url))
 				for row in result:
 					train_no = row["DailyTrainInfo"]["TrainNo"]
-					depart_time = datetime2unixtime(row["OriginStopTime"]["DepartureTime"],date)
-					arrival_time = datetime2unixtime(row["DestinationStopTime"]["ArrivalTime"],date)
-					travel_time[dep_station][arr_station].append( [train_no,depart_time,arrival_time] )
+					depart_time = datetime2unixtime(row["OriginStopTime"]["DepartureTime"], date)
+					arrival_time = datetime2unixtime(row["DestinationStopTime"]["ArrivalTime"], date)
+					travel_time[dep_station][arr_station].append([train_no, depart_time, arrival_time])
+					travel_during_time[dep_station][arr_station] = int(arrival_time) - int(depart_time)
+	return (travel_time, travel_during_time)
 
-	return travel_time
+
+def rail_travel_time(date):
+	# date = YY-MM-DD
+	date = request_date(date)
+	station_url = "http://ptx.transportdata.tw/MOTC/v2/Rail/TRA/Station?$format=JSON"
+	result = simplejson.load(urllib.urlopen(station_url))
+	all_stations = set()
+	for row in result:
+		all_stations.add(row["StationID"])
+
+	travel_time = {}
+	travel_during_time = {}
+	for dep_station in all_stations:
+		travel_time[dep_station] = {}
+		travel_during_time[dep_station] = {}
+		for arr_station in all_stations:
+			if dep_station != arr_station:
+				travel_time[dep_station][arr_station] = []
+				travel_during_time[dep_station][arr_station] = 0
+				timetable_url = "http://ptx.transportdata.tw/MOTC/v2/Rail/TRA/DailyTimetable/OD/%s/to/%s/%s?$format=JSON" % (
+					dep_station, arr_station, date)
+				result = simplejson.load(urllib.urlopen(timetable_url))
+				for row in result:
+					train_no = row["DailyTrainInfo"]["TrainNo"]
+					depart_time = datetime2unixtime(row["OriginStopTime"]["DepartureTime"], date)
+					arrival_time = datetime2unixtime(row["DestinationStopTime"]["ArrivalTime"], date)
+					travel_time[dep_station][arr_station].append([train_no, depart_time, arrival_time])
+					travel_during_time[dep_station][arr_station] = int(arrival_time) - int(depart_time)
+	return (travel_time, travel_during_time)
+
 
 def bus_route(city):
 	# detail refer this link: http://ptx.transportdata.tw/MOTC/Swagger/#!/CityBusApi/CityBusApi_StopOfRoute
