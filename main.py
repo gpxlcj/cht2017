@@ -80,7 +80,7 @@ def bus_main(date):
     for key in NWT_route.keys():
         route[key] = NWT_route[key]
 
-    #route = pickle.load(open("bus_route.pickle", "rb"))
+    pickle.dump(route, open("bus_route.pickle", "wb"))
 
     rid2user,user2rid,route2rid = Preprocess.bus_spatial_index(route, all_user_data)
     SpeedDis = [20]*24

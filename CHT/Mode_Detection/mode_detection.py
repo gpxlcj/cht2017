@@ -221,7 +221,7 @@ def rail_trip_detection(user_data, stations, rail_ref_sys, time_threshold=40, st
                         start_time = int(match_station[trip_num - 1][1][2])
                         end_time = int(match_station[trip_num][1][1])
                         if (end_time - start_time) < (time_threshold * 60) and (end_time - start_time) > 300:
-                            rail_trips.append([imsi, start_time, end_time, depart_station, arrival_station])
+                            rail_trips.append([imsi, start_time, end_time, depart_station, stations[depart_station]['name'], arrival_station, stations[arrival_station]['name']])
 
     if rail_trips:
         rail_trips = merge_train_trip(rail_trips)
