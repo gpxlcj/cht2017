@@ -119,12 +119,12 @@ if __name__ == '__main__':
 
     data_date = args.date
     if args.mode == "bus" or args.mode == "Bus":
-        route = pickle.load(open("bus_route.pickle", "rb"))
+        route = pickle.load(open("data/bus_route.pickle", "rb"))
         with open("output/bus_"+data_date+".csv", "r") as f:
             for row in f:
                 plot_bus(row.rstrip().split(','), data_date, route)
     elif args.mode == "train":
-        rail = pickle.load(open("rail_information.pickle", "rb"))
+        rail = pickle.load(open("data/rail_information.pickle", "rb"))
         with open("output/rail_"+data_date+".csv", "r") as f:
             for row in f:
                 plot_train(row.rstrip().split(','), data_date, rail)

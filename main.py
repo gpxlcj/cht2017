@@ -7,6 +7,7 @@ import csv
 import time
 import pandas
 import argparse
+import cPickle as pickle
 
 
 def csv_output(result, file_name_list=['od.csv', 'stop.csv']):
@@ -62,7 +63,8 @@ def mrt_main(date):
 
 def bus_main(date):
     user_data_path = "./data/user_data/"+date+"/"
-
+    route = pickle.load(open("./data/bus_route.pickle", "rb"))
+    
     all_user_data = dict()
     for file_name in os.listdir(user_data_path):
         f = open(os.path.join(user_data_path, file_name),"r")
@@ -74,25 +76,25 @@ def bus_main(date):
         all_user_data[user_data[0][0]] = user_data
         f.close()
 
+    '''
     TPE_route = External.bus_route('taipei')
     NWT_route = External.bus_route('newtaipei')
     route = TPE_route
     for key in NWT_route.keys():
         route[key] = NWT_route[key]
 
-    pickle.dump(route, open("bus_route.pickle", "wb"))
-
+    pickle.dump(route, open("data/bus_route.pickle", "wb"))
+    '''
     rid2user,user2rid,route2rid = Preprocess.bus_spatial_index(route, all_user_data)
     SpeedDis = [20]*24
     result = Mode_Detection.bus_trip_detection(rid2user, user2rid, route2rid, route, SpeedDis)
-
-    output_result = [(result,)]
     #print result
+    output_result = [(result,)]
     csv_output(output_result, ['bus_'+date+'.csv'])
 
 
 def HSR_main(date):
-    user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
+    user_data_path = "./data/user_data/"+date+"/" 
     result = []
     try:
         request_date = date[:4] + '-' + date[4:6] + '-' + date[6:]
@@ -102,7 +104,7 @@ def HSR_main(date):
     stations = External.HSR_station()
     cell_file = "./data/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
     HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations)
-    print("-----build up rail reference system-----")
+    #print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
         f = open(os.path.join(user_data_path,file_name),"r")
         user_raw_data = [[row[0], row[4], row[2], row[3]] for row in
@@ -118,13 +120,13 @@ def HSR_main(date):
     csv_output(output_result, ['hsr_'+date+'.csv'])
 
 def rail_main(date):
-    user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
+    user_data_path = "./data/user_data/"+date+"/" 
     result = []
     # travel_time, travel_during_time = External.rail_travel_time(date)
     stations = External.rail_station()
     cell_file = "./data/all_tower.csv" #format (lon,lat)
     rail_ref_sys = Preprocess.rail_reference_system(cell_file, stations)
-    print("-----build up rail reference system-----")
+    #print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
         f = open(os.path.join(user_data_path,file_name),"r")
         user_raw_data = [[row[0], row[4], row[2], row[3]] for row in
@@ -137,7 +139,7 @@ def rail_main(date):
         if len(r)!=0:
             result.extend(r)
     output_result = [(result,)]
-    csv_output(output_result, ['rail_'+date+'.csv'])
+    csv_output(output_result, ['train_'+date+'.csv'])
 
 
 if __name__ == '__main__':

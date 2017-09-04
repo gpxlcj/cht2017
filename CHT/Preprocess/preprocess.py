@@ -90,7 +90,7 @@ def HSR_reference_system(cell_file,stations):
         HSR_ref_sys[s] = list()
         for i in range(0,k):
             HSR_ref_sys[s].append([min_stations[i][1],min_stations[i][0]])
-    print(HSR_ref_sys)
+    #print(HSR_ref_sys)
     return HSR_ref_sys
 
 
@@ -155,7 +155,7 @@ def MRT_reference_system(parameter,cell_file,entrance_file,output_file,ref_type=
     output_f.close()
 
 def preprocessing(user_raw_data):
-	#user_raw_data: [[user_imsi,unix_time,lon,lat]...]
+    #user_raw_data: [[user_imsi,unix_time,lon,lat]...]
 
     user_data = []
     user_data.append(user_raw_data[0])
@@ -192,52 +192,63 @@ def preprocessing(user_raw_data):
             lat = user_data[i][3]
     result_data.append([imsi,start_time,end_time,lon,lat])
 
-	# result_data = [[imsi,start_time,end_time,lon,lat]...]
+    # result_data = [[imsi,start_time,end_time,lon,lat]...]
     return result_data
 
 
-def bus_spatial_index(route,all_user_data,stay_time=10,grid_size=0.2):
-	# build R-tree index for each bus stop
-	p = index.Property()
-	idx = index.Index(properties=p)
-	route2rid = {}
-	x_delta = 0.00198726326918 # 1km
-	y_delta = 0.00179663056824 # 1km
-	h_x = x_delta*grid_size
-	h_y = y_delta*grid_size
-	rid = 0
-	for r in route.keys():
-		route2rid[r] = []
-		for item in route[r]:
-			x = float(item[2])
-			y = float(item[3])
-			bound = (x-h_x,y-h_y,x+h_x,y+h_y)
-			idx.insert(rid,bound,obj=rid)
-			route2rid[r].append(rid)
-			rid = rid + 1
+def bus_spatial_index(route,all_user_data,stay_time=10,grid_size=0.5):
+    # build R-tree index for each bus stop
+    p = index.Property()
+    idx = index.Index(properties=p)
+    route2rid = {}
+    x_delta = 0.00198726326918 # 1km
+    y_delta = 0.00179663056824 # 1km
+    h_x = x_delta*grid_size
+    h_y = y_delta*grid_size
+    rid = 0
+    for r in route.keys():
+        route2rid[r] = []
+        '''
+        if r[:3] == 'NWT':
+            for item in route[r]:
+                h_x2 = x_delta*0.5
+                h_y2 = y_delta*0.5
+                x = float(item[2])
+                y = float(item[3])
+                bound = (x-h_x2,y-h_y2,x+h_x2,y+h_y2)
+                idx.insert(rid,bound,obj=rid)
+                route2rid[r].append(rid)
+                rid = rid + 1
+        '''
+        for item in route[r]:
+            x = float(item[2])
+            y = float(item[3])
+            bound = (x-h_x,y-h_y,x+h_x,y+h_y)
+            idx.insert(rid,bound,obj=rid)
+            route2rid[r].append(rid)
+            rid = rid + 1
 
 
-	users = all_user_data.keys()
-	user2rid = {}
-	rid2user = {}
+    users = all_user_data.keys()
+    user2rid = {}
+    rid2user = {}
 
-	for i in range(0,rid+1,1):
-		rid2user[i] = set()
+    for i in range(0,rid+1,1):
+        rid2user[i] = set()
 
-	for num,u in enumerate(users,0):
-		user2rid[u] = []
-		user_data = all_user_data[u]
+    for num,u in enumerate(users,0):
+        user2rid[u] = []
+        user_data = all_user_data[u]
 
-		for row in user_data:
-			x,y = float(row[3]),float(row[4])
-			result = [i for i in idx.intersection((x,y,x,y))]
-			for r in result:
-				rid2user[r].add(u)
+        for row in user_data:
+            x,y = float(row[3]),float(row[4])
+            result = [i for i in idx.intersection((x,y,x,y))]
+            for r in result:
+                rid2user[r].add(u)
 
-			if (int(row[2])-int(row[1])) >= stay_time*60:
-			#if int((datetime.strptime(row[2].split(',')[0], '%H:%M:%S') - datetime.strptime(row[1].split(',')[0], '%H:%M:%S')).total_seconds()) >= stay_time*60:
-				user2rid[u].append([result,row[1],row[2],row[3],row[4],1])
-			else:
-				user2rid[u].append([result,row[1],row[2],row[3],row[4],0])
+            if (int(row[2])-int(row[1])) >= stay_time*60:
+                user2rid[u].append([result,row[1],row[2],row[3],row[4],1])
+            else:
+                user2rid[u].append([result,row[1],row[2],row[3],row[4],0])
 
-	return rid2user,user2rid,route2rid
+    return rid2user,user2rid,route2rid

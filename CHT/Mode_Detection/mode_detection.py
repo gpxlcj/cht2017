@@ -28,7 +28,7 @@ def route_distance(route,start,end,bus_info):
 		distance = distance + d(x,y)
 	return distance
 
-def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_threshold=5,match_number=4,pass_stops=5,merge_type='distance'):
+def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_threshold=5,match_number=2,pass_stops=3,merge_type='distance'):
     bus_trip = []
     for route in route2rid.keys():
         candidate_users = set()
@@ -82,6 +82,9 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
                                 if abs(est_speed - true_speed) <= speed_threshold:
                                     bus_trip.append([u,s_point[2],e_point[1],route,s_index,e_index])
 
+    if not len(bus_trip):
+        #print "no bus trip"
+        return bus_trip
     # merge overlap bus trips
     bus_trip = sorted(bus_trip,key=lambda x:x[0])
     u = bus_trip[0][0]
@@ -97,8 +100,10 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
             l = []
             l.append([row[1],row[2],row[3:],row[0]])
             u = row[0]
+    if not len(overlap_bus_trip):
+        #print "no overlap bus trip"
+        return bus_trip
     overlap_bus_trip.extend(r)
-
     # select the longest trip as result
     longest_bus_trip = []
     for n,row in enumerate(overlap_bus_trip,0):
