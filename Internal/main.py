@@ -1,7 +1,6 @@
 #! -*- coding:utf-8 -*-
 from CHT import Preprocess
 from CHT import Mode_Detection
-from CHT import External
 import os, errno
 import csv
 import time
@@ -37,10 +36,10 @@ def csv_output(result, file_name_list=['od.csv', 'stop.csv']):
 
 def mrt_main(date):
     user_data_path = "./data/user_data/"+date+"/"
-    rf_sys_path = "./data/reference system/entrance_tower_to_subway_k_1.csv"
-    mrt_route_file = "./data/mrt_route.csv"
-    mrt_entrance_file = "./data/mrt_station_entrance.csv"
-    travel_time_file = "./data/mrt_travel_time.csv"
+    rf_sys_path = "./data/external_data/mrt/reference system/entrance_tower_to_subway_k_1.csv"
+    mrt_route_file = "./data/external_data/mrt/mrt_route.csv"
+    mrt_entrance_file = "./data/external_data/mrt/mrt_station_entrance.csv"
+    travel_time_file = "./data/external_data/mrt/mrt_travel_time.csv"
     result = []
     for file_name in os.listdir(user_data_path):
         #new part
@@ -63,7 +62,7 @@ def mrt_main(date):
 
 def bus_main(date):
     user_data_path = "./data/user_data/"+date+"/"
-    route = pickle.load(open("./data/bus_route.pickle", "rb"))
+    route = pickle.load(open("./data/external_data/bus/bus_route.pickle", "rb"))
     
     all_user_data = dict()
     for file_name in os.listdir(user_data_path):
@@ -102,7 +101,7 @@ def HSR_main(date):
         print('date format error')
     travel_time, travel_during_time = External.HSR_travel_time(request_date)
     stations = External.HSR_station()
-    cell_file = "./data/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
+    cell_file = "./data/external_data/hsr/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
     HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations)
     #print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
@@ -124,7 +123,7 @@ def rail_main(date):
     result = []
     # travel_time, travel_during_time = External.rail_travel_time(date)
     stations = External.rail_station()
-    cell_file = "./data/all_tower.csv" #format (lon,lat)
+    cell_file = "./data/external_data/train/all_tower.csv" #format (lon,lat)
     rail_ref_sys = Preprocess.rail_reference_system(cell_file, stations)
     #print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
