@@ -92,8 +92,8 @@ def bus_main(date):
     csv_output(output_result, ['bus_'+date+'.csv'])
 
 
-def HSR_main(date):
-    user_data_path = "./data/user_data/"+date+"/" 
+def HSR_main(date, ref_num=3):
+    user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
     result = []
     try:
         request_date = date[:4] + '-' + date[4:6] + '-' + date[6:]
@@ -101,9 +101,9 @@ def HSR_main(date):
         print('date format error')
     travel_time, travel_during_time = External.HSR_travel_time(request_date)
     stations = External.HSR_station()
-    cell_file = "./data/external_data/hsr/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
-    HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations)
-    #print("-----build up rail reference system-----")
+    cell_file = "./data/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
+    HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations, ref_num)
+    print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
         f = open(os.path.join(user_data_path,file_name),"r")
         user_raw_data = [[row[0], row[4], row[2], row[3]] for row in
@@ -118,14 +118,15 @@ def HSR_main(date):
     output_result = [(result,)]
     csv_output(output_result, ['hsr_'+date+'.csv'])
 
-def rail_main(date):
-    user_data_path = "./data/user_data/"+date+"/" 
+
+def rail_main(date, ref_num=3):
+    user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
     result = []
     # travel_time, travel_during_time = External.rail_travel_time(date)
     stations = External.rail_station()
-    cell_file = "./data/external_data/train/all_tower.csv" #format (lon,lat)
-    rail_ref_sys = Preprocess.rail_reference_system(cell_file, stations)
-    #print("-----build up rail reference system-----")
+    cell_file = "./data/all_tower.csv" #format (lon,lat)
+    rail_ref_sys = Preprocess.rail_reference_system(cell_file, stations, ref_num)
+    print("-----build up rail reference system-----")
     for file_name in os.listdir(user_data_path):
         f = open(os.path.join(user_data_path,file_name),"r")
         user_raw_data = [[row[0], row[4], row[2], row[3]] for row in
@@ -138,7 +139,7 @@ def rail_main(date):
         if len(r)!=0:
             result.extend(r)
     output_result = [(result,)]
-    csv_output(output_result, ['train_'+date+'.csv'])
+    csv_output(output_result, ['rail_'+date+'.csv'])
 
 
 if __name__ == '__main__':
@@ -146,6 +147,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", type=str, help='(mrt/bus/hsr/train)')
     parser.add_argument("date", type=str, help='(yyyymmdd)')
+    parser.add_argument("-n", "--ref_number", type=int, default=3, help="reference tower number")
     args = parser.parse_args()
     print "Detection mode: ", args.mode
     print "Date: ", args.date
@@ -165,13 +167,13 @@ if __name__ == '__main__':
         print "time: {:.2f} seconds".format(end_time - start_time)
     elif args.mode == "hsr" or args.mode == "Hsr":
         start_time = time.time()
-        HSR_main(args.date)
+        HSR_main(args.date, args.ref_number)
         end_time = time.time()
         print "================"
         print "time: {:.2f} seconds".format(end_time - start_time)
     elif args.mode == "train" or args.mode == "Train":
         start_time = time.time()
-        rail_main(args.date)
+        rail_main(args.date, args.ref_number)
         end_time = time.time()
         print "================"
         print "time: {:.2f} seconds".format(end_time - start_time)
