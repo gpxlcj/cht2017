@@ -19,39 +19,41 @@ def d(p1, p2):
     delta_sigma = 2 * math.asin(math.sqrt( math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + math.cos(phi_s) * math.cos(phi_f) * math.sin(delta_lampda / 2) * math.sin(delta_lampda / 2)))
     return delta_sigma * 6378137 # unit (meter)
 
-def find_min_dis(point,location):
-    min_1 = 10000000
-    min_2 = 10000000
-    min_3 = 10000000
+
+def find_min_dis(point,location,n=3):
+    min_list = list()
+    min_station = list()
+    for i in range(0, n):
+        temp = int(100000000)
+        min_list.append(temp)
+        min_station.append(list())
     lat_a = point[0]
     lon_a = point[1]
-    min_station_1 = []
-    min_station_2 = []
-    min_station_3 = []
     for l in location:
         lat_b = l[0]
         lon_b = l[1]
         p1 = [lon_a,lat_a]
         p2 = [lon_b,lat_b]
         dis = d(p1,p2)
-        if dis < min_1:
-            min_3 = min_2
-            min_station_3 = min_station_2
-            min_2 = min_1
-            min_station_2 = min_station_1
-            min_1 = dis
-            min_station_1 = l
-        else:
-            if dis < min_2:
-                min_3 = min_2
-                min_station_3 = min_station_2
-                min_2 = dis
-                min_station_2 = l
-            else:
-                if dis < min_3:
-                    min_3 = dis
-                    min_station_3 = l
-    return [min_station_1,min_station_2,min_station_3]
+        if dis>500:
+            continue
+        for i, min_num in enumerate(min_list):
+            if dis < min_num:
+                for j in range(i+1, n):
+                    temp = min_list[j]
+                    min_list[j] = min_num
+                    min_num = temp
+                    temp = min_station[j]
+                    min_station[j] = min_station[i]
+                    min_station[i] = temp
+                min_list[i] = dis
+                min_station[i] = l
+                break
+    print(min_list)
+    for i,station in enumerate(min_station):
+        if not min_station[i]:
+            min_station[i] = [-1, -1]
+    return min_station
 
 
 def get_cover_tower(cell_tower,entrance,cover_range):
