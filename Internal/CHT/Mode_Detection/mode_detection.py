@@ -4,6 +4,7 @@ import math
 import pickle
 import datetime
 
+
 def d(p1, p2):
 	# p1, p2 = [long, lat]
 	if p1 == p2: # special case: p1 = p2
@@ -20,13 +21,15 @@ def d(p1, p2):
 	delta_sigma = 2 * math.asin(math.sqrt( math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + math.cos(phi_s) * math.cos(phi_f) * math.sin(delta_lampda / 2) * math.sin(delta_lampda / 2)))
 	return delta_sigma * 6378137 # unit (meter)
 
+
 def route_distance(route,start,end,bus_info):
-	distance = 0
-	for i in range(start+1,end+1,1):
-		x = (float(bus_info[route][i][2]),float(bus_info[route][i][3]))
-		y = (float(bus_info[route][i-1][2]),float(bus_info[route][i-1][3]))
-		distance = distance + d(x,y)
-	return distance
+    distance = 0
+    for i in range(start+1,end+1,1):
+        x = (float(bus_info[route][i][2]),float(bus_info[route][i][3]))
+        y = (float(bus_info[route][i-1][2]),float(bus_info[route][i-1][3]))
+        distance = distance + d(x,y)
+    return distance
+
 
 def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_threshold=5,match_number=2,pass_stops=3,merge_type='distance'):
     bus_trip = []
@@ -44,7 +47,6 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
                 if len(tra_set & route_set)!=0:
                     match[u].append(i)
 
-
         for u in match.keys():
             stay_index = [i for i,data in enumerate(user2rid[u],0) if data[5]==1]
             for i in range(1,len(stay_index),1):
@@ -58,7 +60,6 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
                         e_rid = list(e_rid)[0]
                         s_index = [stop_index for (stop_index,x) in enumerate(route2rid[route],0) if x == s_rid][0]
                         e_index = [stop_index for (stop_index,x) in enumerate(route2rid[route],0) if x == e_rid][-1]
-
                         p = 0
                         for row in seg:
                             if len(set(row[0]) & route_set) > 0:
@@ -67,7 +68,6 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
                         if ((e_index - s_index) >= pass_stops) & (p >= match_number):
                             s_point = seg[0]
                             e_point = seg[-1]
-
                             travel_time = int(e_point[1]) - int(s_point[2])
                             travel_time = travel_time/3600.0 # hour
                             distance = route_distance(route,s_index,e_index,bus_route)
@@ -122,6 +122,7 @@ def bus_trip_detection(rid2user,user2rid,route2rid,bus_route,SpeedDis,speed_thre
 
     return longest_bus_trip
 
+
 def merge(times):
 	saved = [times[0][0],times[0][1],[times[0][2]],times[0][3]]
 	for st, en, r,u in times:
@@ -136,7 +137,6 @@ def merge(times):
 			saved[2] = [r]
 			saved[3] = u
 	yield tuple(saved)
-
 
 
 def find_the_closest_train_no(travel_time,start_time,end_time,time_threshold):
