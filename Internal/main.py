@@ -99,8 +99,8 @@ def HSR_main(date, ref_num=3):
         request_date = date[:4] + '-' + date[4:6] + '-' + date[6:]
     except:
         print('date format error')
-    travel_time, travel_during_time = External.HSR_travel_time(request_date)
-    stations = External.HSR_station()
+    travel_time, travel_during_time = pickle.load(open("../External/external_data/hsr/hsr_station.pickle", "rb"))
+    stations = pickle.load(open("../External/external_data/hsr/hsr_travel_time_" + date + ".pickle", "rb"))
     cell_file = "./data/all_tower.csv" #�s�Ҧ��򯸦�m���ɮ�(lon,lat)
     HSR_ref_sys = Preprocess.HSR_reference_system(cell_file, stations, ref_num)
     print("-----build up rail reference system-----")
@@ -123,7 +123,7 @@ def rail_main(date, ref_num=3):
     user_data_path = "./data/user_data/"+date+"/" #�s�Ҧ��ϥΪ̪��@�Ѫ���ƪ���Ƨ�
     result = []
     # travel_time, travel_during_time = External.rail_travel_time(date)
-    stations = External.rail_station()
+    stations = pickle.load(open("../External/external_data/train/train_station.pickle", "rb"))
     cell_file = "./data/all_tower.csv" #format (lon,lat)
     rail_ref_sys = Preprocess.rail_reference_system(cell_file, stations, ref_num)
     print("-----build up rail reference system-----")
