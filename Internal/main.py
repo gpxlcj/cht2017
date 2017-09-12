@@ -139,7 +139,7 @@ def rail_main(date, ref_num=3):
         if len(r)!=0:
             result.extend(r)
     output_result = [(result,)]
-    csv_output(output_result, ['rail_'+date+'.csv'])
+    csv_output(output_result, ['train_'+date+'.csv'])
 
 
 if __name__ == '__main__':
